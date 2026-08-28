@@ -1,0 +1,606 @@
+import Movie from "../models/movie.js";
+import User from "../models/user.js";
+import {
+  uploadToCloudinary,
+  deleteFromCloudinary,
+  paginationHelper,
+  calculatePaginationData,
+  successResponse,
+  errorResponse,
+  isValidObjectId,
+} from "../utils/helpers.js";
+import { sendNewMovieNotificationEmail } from "../config/email.js";
+
+const parseArrayField = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return String(value)
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+};
+
+// Create a new movie (Admin only)
+export const createMovie = async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      genre,
+      duration,
+      rating,
+      language,
+      subtitles,
+      airedDate,
+      status,
+      quality,
+      contentType,
+      ageRating,
+      director,
+      cast,
+      releaseYear,
+      tags,
+    } = req.body;
+
+    // Validate required fields
+    if (
+      !title ||
+      !description ||
+      !genre ||
+      !language ||
+      !subtitles ||
+      !duration ||
+      !airedDate
+    ) {
+      return errorResponse(res, 400, "Missing required fields");
+    }
+
+    const parsedCast = parseArrayField(cast);
+    const parsedTags = parseArrayField(tags);
+
+    // Check if movie already exists
+    const movieExists = await Movie.findOne({ title });
+    if (movieExists) {
+      return errorResponse(res, 409, "Movie already exists");
+    }
+
+    // Upload poster image if provided
+    let posterImage = null;
+    if (req.files?.posterImage?.length) {
+      console.log("Uploading poster...");
+      posterImage = await uploadToCloudinary(
+        req.files.posterImage[0].path,
+        "posters",
+      );
+    }
+
+    // Upload video if provided
+    let videoUrl = null;
+    if (req.files?.videoFile?.length) {
+      console.log("Uploading video...");
+      videoUrl = await uploadToCloudinary(
+        req.files.videoFile[0].path,
+        "videos",
+      );
+    }
+
+    const movieData = {
+      title,
+      description,
+      genre,
+      duration: parseInt(duration, 10),
+      rating: rating ? parseFloat(rating) : 0,
+      lang: language,
+      subtitles,
+      airedDate: new Date(airedDate),
+      status: status || "Completed",
+      quality: quality || "720p",
+      contentType: contentType || "Movie",
+      ageRating: ageRating || "PG-13",
+      director: director || "",
+      cast: parsedCast,
+      releaseYear: releaseYear
+        ? parseInt(releaseYear, 10)
+        : new Date().getFullYear(),
+      tags: parsedTags,
+      isActive:
+        req.body.isActive !== undefined ? req.body.isActive === "true" : true,
+      createdBy: req.user.userId,
+      posterImage,
+      videoUrl,
+    };
+
+    const movie = await Movie.create(movieData);
+
+    successResponse(res, 201, "Movie created successfully", movie);
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Get all movies with pagination and filters
+export const getAllMovies = async (req, res) => {
+  try {
+    const {
+      page,
+      limit,
+      genre,
+      language,
+      status,
+      search,
+      contentType,
+      ageRating,
+      rating,
+      subtitles,
+      quality,
+      duration,
+      airedDate,
+    } = req.query;
+
+    const {
+      page: pageNum,
+      limit: limitNum,
+      skip,
+    } = paginationHelper(page, limit);
+
+    let filter = { isActive: true };
+
+    if (genre) {
+      filter.genre = { $in: [genre] };
+    }
+
+    if (language) {
+      filter.lang = { $in: [language] };
+    }
+
+    if (status) {
+      filter.status = status;
+    }
+
+    if (contentType) {
+      filter.contentType = { $in: [contentType] };
+    }
+
+    if (ageRating) {
+      filter.ageRating = ageRating;
+    }
+
+    if (rating) {
+      const r = parseFloat(rating);
+      if (!isNaN(r)) filter.rating = r;
+    }
+
+    if (subtitles) {
+      filter.subtitles = subtitles;
+    }
+
+    if (quality) {
+      filter.quality = quality;
+    }
+
+    if (duration) {
+      // If the client provides a number, treat it as max duration in minutes
+      const d = parseInt(duration, 10);
+      if (!isNaN(d)) filter.duration = { $lte: d };
+    }
+
+    if (airedDate) {
+      // filter movies aired on or after the provided date
+      const date = new Date(airedDate);
+      if (!isNaN(date.getTime())) filter.airedDate = { $gte: date };
+    }
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { tags: { $in: [new RegExp(search, "i")] } },
+      ];
+    }
+
+    const totalMovies = await Movie.countDocuments(filter);
+    const movies = await Movie.find(filter)
+      .populate("createdBy", "name email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
+
+    const paginationData = calculatePaginationData(
+      pageNum,
+      limitNum,
+      totalMovies,
+    );
+
+    successResponse(res, 200, "Movies fetched successfully", {
+      movies,
+      pagination: paginationData,
+    });
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Get movie by ID
+export const getMovieById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return errorResponse(res, 400, "Invalid movie ID");
+    }
+
+    const movie = await Movie.findByIdAndUpdate(
+      id,
+      { $inc: { viewCount: 1 } },
+      { new: true },
+    ).populate("createdBy", "name email");
+
+    if (!movie) {
+      return errorResponse(res, 404, "Movie not found");
+    }
+
+    successResponse(res, 200, "Movie fetched successfully", movie);
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Update movie (Admin only)
+export const updateMovie = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return errorResponse(res, 400, "Invalid movie ID");
+    }
+
+    const movie = await Movie.findById(id);
+    if (!movie) {
+      return errorResponse(res, 404, "Movie not found");
+    }
+
+    const {
+      title,
+      description,
+      genre,
+      duration,
+      rating,
+      language,
+      subtitles,
+      airedDate,
+      status,
+      quality,
+      contentType,
+      ageRating,
+      director,
+      cast,
+      releaseYear,
+      tags,
+      isActive,
+      isNewRelease,
+    } = req.body;
+
+    // Update basic fields
+    if (title) movie.title = title;
+    if (description) movie.description = description;
+    if (genre) movie.genre = genre;
+    if (duration) movie.duration = parseInt(duration, 10);
+    if (rating !== undefined) movie.rating = parseFloat(rating);
+    if (language) movie.lang = language;
+    if (subtitles) movie.subtitles = subtitles;
+    if (airedDate) movie.airedDate = new Date(airedDate);
+    if (status) movie.status = status;
+    if (quality) movie.quality = quality;
+    if (contentType) movie.contentType = contentType;
+    if (ageRating) movie.ageRating = ageRating;
+    if (director !== undefined) movie.director = director;
+    if (cast) movie.cast = parseArrayField(cast);
+    if (releaseYear) movie.releaseYear = parseInt(releaseYear, 10);
+    if (tags) movie.tags = parseArrayField(tags);
+    if (isActive !== undefined) movie.isActive = isActive === "true";
+    if (isNewRelease !== undefined) movie.isNewRelease = isNewRelease === "true";
+
+    // Update poster image if provided
+    if (req.files && req.files.posterImage) {
+      if (movie.posterImage && movie.posterImage.publicId) {
+        await deleteFromCloudinary(movie.posterImage.publicId);
+      }
+      movie.posterImage = await uploadToCloudinary(
+        req.files.posterImage.path,
+        "posters",
+      );
+    }
+
+    // Update video if provided
+    if (req.files && req.files.videoFile) {
+      if (movie.videoUrl && movie.videoUrl.publicId) {
+        await deleteFromCloudinary(movie.videoUrl.publicId);
+      }
+      movie.videoUrl = await uploadToCloudinary(
+        req.files.videoFile.path,
+        "videos",
+      );
+    }
+
+    movie.updatedBy = req.user.userId;
+    await movie.save();
+
+    successResponse(res, 200, "Movie updated successfully", movie);
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Delete movie (Admin only)
+export const deleteMovie = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return errorResponse(res, 400, "Invalid movie ID");
+    }
+
+    const movie = await Movie.findByIdAndDelete(id);
+    if (!movie) {
+      return errorResponse(res, 404, "Movie not found");
+    }
+
+    // Delete from cloudinary
+    if (movie.posterImage && movie.posterImage.publicId) {
+      await deleteFromCloudinary(movie.posterImage.publicId);
+    }
+    if (movie.videoUrl && movie.videoUrl.publicId) {
+      await deleteFromCloudinary(movie.videoUrl.publicId);
+    }
+
+    successResponse(res, 200, "Movie deleted successfully");
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Get trending movies
+export const getTrendingMovies = async (req, res) => {
+  try {
+    const { limit } = req.query;
+    const limitNum = parseInt(limit) || 10;
+
+    const movies = await Movie.find({ isActive: true })
+      .sort({ viewCount: -1 })
+      .limit(limitNum)
+      .populate("createdBy", "name email");
+
+    successResponse(res, 200, "Trending movies fetched successfully", movies);
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Get movies by genre
+export const getMoviesByGenre = async (req, res) => {
+  try {
+    const { genre, page, limit } = req.query;
+    const {
+      page: pageNum,
+      limit: limitNum,
+      skip,
+    } = paginationHelper(page, limit);
+
+    if (!genre) {
+      return errorResponse(res, 400, "Genre is required");
+    }
+
+    const totalMovies = await Movie.countDocuments({
+      genre: genre,
+      isActive: true,
+    });
+
+    const movies = await Movie.find({ genre: genre, isActive: true })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .populate("createdBy", "name email");
+
+    const paginationData = calculatePaginationData(
+      pageNum,
+      limitNum,
+      totalMovies,
+    );
+
+    successResponse(res, 200, "Movies fetched successfully", {
+      movies,
+      pagination: paginationData,
+    });
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Like a movie
+export const likeMovie = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return errorResponse(res, 400, "Invalid movie ID");
+    }
+
+    const movie = await Movie.findByIdAndUpdate(
+      id,
+      { $inc: { likes: 1 } },
+      { new: true },
+    );
+
+    if (!movie) {
+      return errorResponse(res, 404, "Movie not found");
+    }
+
+    successResponse(res, 200, "Movie liked successfully", movie);
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Add to watchlist
+export const addToWatchlist = async (req, res) => {
+  try {
+    const { movieId } = req.body;
+    const userId = req.user.userId;
+
+    if (!isValidObjectId(movieId)) {
+      return errorResponse(res, 400, "Invalid movie ID");
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return errorResponse(res, 404, "User not found");
+    }
+
+    const movieId_obj = movieId.toString();
+    if (user.watchlist.includes(movieId_obj)) {
+      return errorResponse(res, 409, "Movie already in watchlist");
+    }
+
+    user.watchlist.push(movieId);
+    await user.save();
+
+    successResponse(res, 200, "Added to watchlist", user.watchlist);
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Remove from watchlist
+export const removeFromWatchlist = async (req, res) => {
+  try {
+    const { movieId } = req.body;
+    const userId = req.user.userId;
+
+    if (!isValidObjectId(movieId)) {
+      return errorResponse(res, 400, "Invalid movie ID");
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { watchlist: movieId } },
+      { new: true },
+    );
+
+    if (!user) {
+      return errorResponse(res, 404, "User not found");
+    }
+
+    successResponse(res, 200, "Removed from watchlist", user.watchlist);
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Get watchlist
+export const getWatchlist = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const user = await User.findById(userId).populate("watchlist");
+    if (!user) {
+      return errorResponse(res, 404, "User not found");
+    }
+
+    successResponse(res, 200, "Watchlist fetched successfully", user.watchlist);
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Add to watch history
+export const addToWatchHistory = async (req, res) => {
+  try {
+    const { movieId, duration } = req.body;
+    const userId = req.user.userId;
+
+    if (!isValidObjectId(movieId)) {
+      return errorResponse(res, 400, "Invalid movie ID");
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return errorResponse(res, 404, "User not found");
+    }
+
+    // Check if movie already in watch history
+    const existingHistory = user.watchHistory.find(
+      (h) => h.movie.toString() === movieId,
+    );
+
+    if (existingHistory) {
+      existingHistory.lastWatchedAt = new Date();
+      existingHistory.duration = duration;
+    } else {
+      user.watchHistory.push({
+        movie: movieId,
+        duration: duration,
+      });
+    }
+
+    await user.save();
+    successResponse(res, 200, "Added to watch history");
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Get watch history
+export const getWatchHistory = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const user = await User.findById(userId)
+      .populate("watchHistory.movie")
+      .select("watchHistory");
+
+    if (!user) {
+      return errorResponse(res, 404, "User not found");
+    }
+
+    successResponse(
+      res,
+      200,
+      "Watch history fetched successfully",
+      user.watchHistory,
+    );
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Activate/Deactivate movie
+export const toggleMovieStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return errorResponse(res, 400, "Invalid movie ID");
+    }
+
+    const movie = await Movie.findById(id);
+    if (!movie) {
+      return errorResponse(res, 404, "Movie not found");
+    }
+
+    movie.isActive = !movie.isActive;
+    await movie.save();
+
+    successResponse(
+      res,
+      200,
+      `Movie ${movie.isActive ? "activated" : "deactivated"} successfully`,
+      movie,
+    );
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};

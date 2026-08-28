@@ -1,0 +1,31 @@
+import React from 'react';
+import Usernav from '../../components/user/Usernav';
+
+function Community() {
+  return (
+    <>
+      <div className="w-full">
+        <Usernav />
+        <div className="backdrop-blur-lg bg-[#000000b1] bg-opacity-90 flex flex-col px-auto items-center">
+          <div className="text-white w-3/4 mt-20 mb-4 z-1 border-x border-[#8f8f8f4d] text-justify px-4">
+            <p>
+              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero.
+              Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum.
+              Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa.
+              Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.
+              Curabitur sodales ligula in libero.
+
+              Lorem ipsum dolor sit, amet consectetur adipisicing elit. Dolore illum quasi temporibus expedita, consectetur magni accusamus. Illo explicabo quam omnis quidem dignissimos? Quos modi rerum consequatur praesentium consequuntur nesciunt illo temporibus. Impedit?
+
+              Lorem ipsum dolor sit amet consectetur adipisicing elit. Delectus, nesciunt. Maxime minima neque exercitationem, quisquam ipsa odit repudiandae reiciendis quas ducimus, laborum assumenda aspernatur quasi consequuntur at quibusdam. Eaque quos enim, nisi ut ipsum doloremque a, similique error, quo quia blanditiis accusantium quasi harum cum molestiae sint aut. Adipisci hic possimus ut animi sapiente ad quae odio cum, unde atque, delectus sit! Praesentium, consectetur numquam suscipit obcaecati labore eum, exercitationem ullam quae nesciunt quibusdam sit aperiam fugiat. Enim voluptates alias temporibus cupiditate possimus, itaque neque eum officiis! Voluptatum tempora quam fuga sed beatae eos consequatur dolorum doloribus, recusandae nostrum dignissimos?
+
+              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Eveniet natus pariatur harum repudiandae necessitatibus nihil totam dignissimos ratione consectetur illum odit culpa dolores ullam omnis reprehenderit doloribus unde quod, reiciendis iste laudantium id molestias! Perferendis placeat asperiores, voluptas ex harum obcaecati unde eaque eos, incidunt similique maxime! Enim, natus! Sint itaque explicabo iusto nostrum animi sequi aspernatur consectetur sed! Maiores illo non neque suscipit dolore modi quia dolorem nemo ut praesentium pariatur numquam reiciendis fugiat deleniti similique explicabo voluptatum quam aut, corrupti vel laboriosam repellat sunt. Fugit deleniti quia praesentium accusamus sapiente quam, consequuntur neque repudiandae minima ab repellat dolores totam perferendis culpa reiciendis sunt, quas, hic distinctio accusantium delectus reprehenderit! Laboriosam modi aliquid, eum blanditiis labore, alias expedita molestiae sapiente earum natus recusandae iusto unde! Unde aspernatur maiores ex, animi maxime facilis voluptates ducimus voluptatem quibusdam, veniam necessitatibus cumque deserunt amet quia! Provident doloribus deleniti dolores ratione necessitatibus blanditiis quo esse repellat facere omnis quia, dignissimos nisi aut. Deserunt culpa amet optio dolor dolorum nihil repellendus? Eaque deleniti saepe, iusto repudiandae non quasi autem numquam perspiciatis cum placeat facere qui. Voluptatem, quibusdam at est ipsam fuga sapiente natus, ea dolor recusandae, corporis nobis tempora asperiores consequatur. Perspiciatis nulla atque, non voluptatibus, ex corporis voluptates in quidem ullam aliquam doloremque? Sapiente laborum repudiandae beatae ratione quas sunt fuga? Error in iusto alias obcaecati fugit? Modi, minima quis eligendi beatae vero laudantium reiciendis quisquam quasi porro voluptates deserunt aut vel vitae asperiores cumque culpa? Molestias assumenda cumque quaerat ullam. Cum qui molestiae assumenda, minima adipisci itaque eligendi perferendis quo fuga maiores est blanditiis ab voluptates, corrupti omnis quia quod sint iste. Necessitatibus accusantium ea perspiciatis dolorem illum numquam nemo amet fugiat assumenda. Quidem culpa similique magnam commodi sapiente quaerat repudiandae sint voluptas neque ipsa distinctio, aperiam incidunt dolorum delectus adipisci in necessitatibus esse magni, ab quasi nulla quae. Iste qui veritatis voluptatem, nisi nemo neque velit odit vero veniam sequi delectus, maiores molestiae optio nesciunt officia, asperiores est quasi! Placeat quos tenetur ullam obcaecati nulla consequuntur exercitationem, culpa modi perferendis ex natus totam facilis delectus sunt at repellat voluptates! Alias, maiores accusamus fuga ipsa doloremque earum facilis aspernatur. Vero ex sed modi hic enim aliquid odio iure quae accusantium aspernatur odit minima maiores molestias nostrum reprehenderit accusamus provident, ea nemo blanditiis! Animi, expedita deserunt excepturi eligendi reiciendis consequuntur quo nemo, cupiditate, enim nulla blanditiis iure molestias ipsam hic at sunt atque eum vel esse ut harum. Repellendus veniam exercitationem id, ratione asperiores eius modi labore deserunt itaque consectetur, provident magni assumenda nobis placeat ad ullam, excepturi unde cum eveniet quisquam? Consequatur, repellendus qui dolor, inventore omnis incidunt error delectus enim debitis facilis, aut eaque non similique quo praesentium obcaecati saepe magnam eum dolorem minima modi. Architecto quia cupiditate velit inventore, laudantium cumque quas deserunt soluta in quos, optio, voluptatem omnis sequi animi vitae amet magnam impedit. Delectus eos assumenda omnis officiis eaque perferendis maxime, obcaecati nobis quae odit atque animi ut dolores deserunt in similique quis magni earum! Quisquam, eaque tenetur?
+            </p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default Community;

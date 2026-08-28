@@ -1,0 +1,175 @@
+import { useRef, useState } from "react";
+import nepshow from "../../images/nepshow.png";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+function AccountVerificationPage() {
+  const navigate = useNavigate();
+
+  const digit1Ref = useRef(null);
+  const digit2Ref = useRef(null);
+  const digit3Ref = useRef(null);
+  const digit4Ref = useRef(null);
+  const digit5Ref = useRef(null);
+  const digit6Ref = useRef(null);
+
+  const moveToNext = (current, nextFieldRef) => {
+    if (current.value.length >= 1) {
+      nextFieldRef.current.focus();
+    }
+  };
+
+  const moveToPrevious = (event, current, prevFieldRef) => {
+    if (event.key === "Backspace" && current.value.length === 0) {
+      prevFieldRef.current.focus();
+    }
+  };
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+    const a = document.getElementById("value1").value;
+    const b = document.getElementById("value2").value;
+    const c = document.getElementById("value3").value;
+    const d = document.getElementById("value4").value;
+    const e = document.getElementById("value5").value;
+    const f = document.getElementById("value6").value;
+
+    const enteredOtp = [a, b, c, d, e, f].join("");
+    if (enteredOtp.length !== 6) {
+      setError("Please enter the full 6-digit OTP");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const email = sessionStorage.getItem("user_email");
+      const response = await axios.post(
+        "http://localhost:8000/api/auth/verify-email",
+        { email, otp: enteredOtp },
+      );
+      if (response.data.success === true) {
+        alert(response.data.message || "The given OTP has been verified");
+        navigate("/login");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "The entered OTP is incorrect");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="custom-bg  min-h-screen">
+        <div className="h-screen flex justify-center items-center bg-black bg-opacity-90">
+          <div
+            id="ff0001"
+            className="border-[1px] border-[#81808053] backdrop-blur-[2px]-sm bg-[#000000a1] p-6 rounded-lg shadow-lg max-w-md w-full"
+          >
+            <div className="flex justify-center mb-6">
+              <img className="mx-auto h-12" src={nepshow} alt="logo" />
+            </div>
+            <div className="text-center text-gray-200 mb-6">
+              <h4 className="text-xl font-semibold my-2">
+                Account Verification
+              </h4>
+              <p className="text-gray-200">
+                Please provide the verification code that has been sent to the
+                provided email for the account registration.
+              </p>
+            </div>
+            <div className="inp">
+              <form method="post" className="space-y-4" onSubmit={handleSubmit}>
+                <div className="flex space-x-2 justify-center mt-2">
+                  <input
+                    type="text"
+                    maxLength="1"
+                    id="value1"
+                    className="w-12 h-12 bg-transparent text-gray-100 text-center border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    ref={digit1Ref}
+                    onInput={(event) => moveToNext(event.target, digit2Ref)}
+                    onKeyDown={(event) =>
+                      moveToPrevious(event, event.target, digit1Ref)
+                    }
+                    autoFocus
+                  />
+                  <input
+                    type="text"
+                    maxLength="1"
+                    id="value2"
+                    className="w-12 h-12 bg-transparent text-gray-100 text-center border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    ref={digit2Ref}
+                    onInput={(event) => moveToNext(event.target, digit3Ref)}
+                    onKeyDown={(event) =>
+                      moveToPrevious(event, event.target, digit1Ref)
+                    }
+                  />
+                  <input
+                    type="text"
+                    maxLength="1"
+                    id="value3"
+                    className="w-12 h-12 bg-transparent text-gray-100 text-center border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    ref={digit3Ref}
+                    onInput={(event) => moveToNext(event.target, digit4Ref)}
+                    onKeyDown={(event) =>
+                      moveToPrevious(event, event.target, digit2Ref)
+                    }
+                  />
+                  <input
+                    type="text"
+                    maxLength="1"
+                    id="value4"
+                    className="w-12 h-12 bg-transparent text-gray-100 text-center border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    ref={digit4Ref}
+                    onInput={(event) => moveToNext(event.target, digit5Ref)}
+                    onKeyDown={(event) =>
+                      moveToPrevious(event, event.target, digit3Ref)
+                    }
+                  />
+                  <input
+                    type="text"
+                    maxLength="1"
+                    id="value5"
+                    className="w-12 h-12 bg-transparent text-gray-100 text-center border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    ref={digit5Ref}
+                    onInput={(event) => moveToNext(event.target, digit6Ref)}
+                    onKeyDown={(event) =>
+                      moveToPrevious(event, event.target, digit4Ref)
+                    }
+                  />
+                  <input
+                    type="text"
+                    maxLength="1"
+                    id="value6"
+                    className="w-12 h-12 bg-transparent text-gray-100 text-center border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    ref={digit6Ref}
+                    onInput={(event) => moveToNext(event.target, digit6Ref)}
+                    onKeyDown={(event) =>
+                      moveToPrevious(event, event.target, digit5Ref)
+                    }
+                  />
+                  {error && (
+                    <p className="text-sm text-red-400 text-center">{error}</p>
+                  )}
+                </div>
+                <button
+                  className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? "Verifying..." : "Submit"}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default AccountVerificationPage;

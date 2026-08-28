@@ -1,0 +1,43 @@
+﻿import bg from './bg.jpg';
+import bulb from './bulb.jpg';
+import logo from './logo.png';
+import nepshow from './nepshow.png';
+import offer1 from './offer1.jpg';
+import pic1 from './pic1.jpeg';
+import pic10 from './pic10.jpeg';
+import pic11 from './pic11.jpeg';
+import pic12 from './pic12.jpeg';
+import pic13 from './pic13.jpeg';
+import pic14 from './pic14.jpeg';
+import pic15 from './pic15.jpeg';
+import pic16 from './pic16.jpeg';
+import pic17 from './pic17.jpeg';
+import pic18 from './pic18.jpeg';
+import pic19 from './pic19.jpeg';
+import pic2 from './pic2.jpeg';
+import pic20 from './pic20.jpeg';
+import pic24 from './pic24.jpeg';
+import pic25 from './pic25.jpeg';
+import pic26 from './pic26.jpeg';
+import pic27 from './pic27.jpeg';
+import pic3 from './pic3.jpeg';
+import pic33 from './pic33.jpeg';
+import pic35 from './pic35.jpeg';
+import pic4 from './pic4.jpeg';
+import pic5 from './pic5.jpeg';
+import pic6 from './pic6.jpeg';
+import pic7 from './pic7.jpeg';
+import pic8 from './pic8.jpeg';
+import pic9 from './pic9.jpeg';
+import sap1 from './sap1.jpg';
+import slider1 from './slider1.jpg';
+import slider2 from './slider2.jpg';
+import slider3 from './slider3.jpg';
+import slider4 from './slider4.jpg';
+import slider5 from './slider5.jpg';
+import slider6 from './slider6.jpg';
+import user from './user.jpg';
+
+export {
+bg, bulb, logo, nepshow, offer1, pic1, pic10, pic11, pic12, pic13, pic14, pic15, pic16, pic17, pic18, pic19, pic2, pic20, pic24, pic25, pic26, pic27, pic3, pic33, pic35, pic4, pic5, pic6, pic7, pic8, pic9, sap1, slider1, slider2, slider3, slider4, slider5, slider6, user
+};
