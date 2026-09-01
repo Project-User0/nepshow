@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|mov|avi|mkv|webm/;
+  const allowedTypes = /jpeg|jpg|png|gif|webp|mp4|mov|avi|mkv|webm|srt|vtt/;
   const ext = path.extname(file.originalname).toLowerCase();
 
   if (allowedTypes.test(ext)) {
@@ -40,6 +40,7 @@ const upload = multer({
 });
 
 export const uploadMovieMedia = upload.fields([
+  { name: "subtitleFile", maxCount: 1 },
   { name: "posterImage", maxCount: 1 },
   { name: "videoFile", maxCount: 1 },
 ]);

@@ -10,15 +10,23 @@ export const generateToken = (userId, role) => {
 
 export const uploadToCloudinary = async (filePath, folder) => {
   try {
-    const isVideo = folder === "videos";
+    let resourceType = "image";
+
+    if (folder === "videos") {
+      resourceType = "video";
+    }
+
+    if (folder === "subtitles") {
+      resourceType = "raw";
+    }
+
     const result = await cloudinary.uploader.upload(filePath, {
       folder: `nepshow/${folder}`,
-      resource_type: isVideo ? "video" : "image",   
-      quality: "auto",
-      fetch_format: "auto",
+      resource_type: resourceType,
+      quality: resourceType === "image" ? "auto" : undefined,
+      fetch_format: resourceType === "image" ? "auto" : undefined,
     });
 
-    // Delete local file after upload
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
@@ -26,13 +34,12 @@ export const uploadToCloudinary = async (filePath, folder) => {
     return {
       url: result.secure_url,
       publicId: result.public_id,
+      resourceType,
     };
   } catch (error) {
-    // Delete local file on error
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
-    // throw new Error(`Cloudinary upload failed: ${error.message}`);
 
     console.error("Full Cloudinary error:", error);
 
@@ -42,7 +49,6 @@ export const uploadToCloudinary = async (filePath, folder) => {
         name: error.name,
         http_code: error.http_code,
         error: error.error,
-        stack: error.stack,
       }),
     );
   }

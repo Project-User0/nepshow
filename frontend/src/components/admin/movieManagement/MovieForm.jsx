@@ -40,6 +40,7 @@ const MovieForm = ({ movie, onSave, onClose }) => {
     tags: "",
     isActive: true,
     isNewRelease: false,
+    subtitleFile: null,
     posterImage: null,
     videoFile: null,
   });
@@ -67,6 +68,7 @@ const MovieForm = ({ movie, onSave, onClose }) => {
         tags: (movie.tags || []).join(", "),
         isActive: movie.isActive !== false,
         isNewRelease: movie.isNewRelease !== false,
+        subtitleFile: null,
         posterImage: null,
         videoFile: null,
       });
@@ -131,6 +133,10 @@ const MovieForm = ({ movie, onSave, onClose }) => {
       );
       payload.append("isActive", String(formData.isActive));
       payload.append("isNewRelease", String(formData.isNewRelease));
+
+      if (formData.subtitleFile) {
+        payload.append("subtitleFile", formData.subtitleFile);
+      }
 
       if (formData.posterImage) {
         payload.append("posterImage", formData.posterImage);
@@ -258,6 +264,18 @@ const MovieForm = ({ movie, onSave, onClose }) => {
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Subtitle File
+              </label>
+              <input
+                type="file"
+                name="subtitleFile"
+                accept=".srt,.vtt"
+                onChange={handleFileChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              />
             </div>
 
             <div>

@@ -5,7 +5,11 @@ import Usernav from "../../components/user/Usernav";
 import Footer from "../../components/landing/Footer";
 
 import { apiClient } from "../../utils/api";
-import { getStoredUser, isAuthenticated, isSubscriptionActive } from "../../utils/authMiddleware";
+import {
+  getStoredUser,
+  isAuthenticated,
+  isSubscriptionActive,
+} from "../../utils/authMiddleware";
 
 function Preview() {
   const { id } = useParams();
@@ -23,6 +27,11 @@ function Preview() {
   const videoRef = useRef(null);
   const [videoLoading, setVideoLoading] = useState(true);
 
+  const subtitleTrackUrl = movie?.subtitleFile?.url
+    ? `${(import.meta.env.VITE_API_URL || "http://localhost:8000")
+        .replace(/\/+$/, "")}/api/movies/${movie._id}/subtitle`
+    : "";
+
   useEffect(() => {
     const user = getStoredUser();
     if (!isAuthenticated() || !isSubscriptionActive(user)) {
@@ -35,8 +44,6 @@ function Preview() {
     loadMovie();
     loadRecommendedMovies();
   }, [id, navigate]);
-
-
 
   const loadMovie = async () => {
     try {
@@ -84,15 +91,17 @@ function Preview() {
   const handleShare = async () => {
     try {
       setSharing(true);
-      const response = await apiClient.post('/auth/share-link', { movieId: id });
+      const response = await apiClient.post("/auth/share-link", {
+        movieId: id,
+      });
       const shareUrl = response?.data?.data?.shareUrl;
       if (shareUrl) {
         await navigator.clipboard.writeText(shareUrl);
-        alert('Share link copied to clipboard. It will expire after 10 hours.');
+        alert("Share link copied to clipboard. It will expire after 10 hours.");
       }
     } catch (err) {
       console.error(err);
-      alert(err?.response?.data?.message || 'Unable to generate share link.');
+      alert(err?.response?.data?.message || "Unable to generate share link.");
     } finally {
       setSharing(false);
     }
@@ -135,7 +144,6 @@ function Preview() {
       document.removeEventListener("keydown", preventKeys);
     };
   }, []);
-
 
   if (loadingMovie) {
     return (
@@ -201,6 +209,7 @@ function Preview() {
               disableRemotePlayback
               playsInline
               preload="metadata"
+              crossOrigin="anonymous"
               draggable={false}
               onContextMenu={(e) => e.preventDefault()}
               onLoadedData={() => setVideoLoading(false)}
@@ -208,6 +217,16 @@ function Preview() {
               onPlaying={() => setVideoLoading(false)}
             >
               <source src={movie.videoUrl?.url} type="video/mp4" />
+              {subtitleTrackUrl && (
+                <track
+                  kind="subtitles"
+                  srcLang="en"
+                  label="English"
+                  src={subtitleTrackUrl}
+                  default
+                  onError={() => console.error("Subtitle track failed to load")}
+                />
+              )}
               Your browser doesn&apos;t support HTML5 video.
             </video>
           </div>
@@ -261,7 +280,7 @@ function Preview() {
                 disabled={sharing}
                 className="mt-6 rounded-full bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {sharing ? 'Creating share link...' : 'Share this movie'}
+                {sharing ? "Creating share link..." : "Share this movie"}
               </button>
             </div>
 
@@ -275,7 +294,7 @@ function Preview() {
               <div className="space-y-5">
                 <InfoRow title="Genre" value={movie.genre} />
 
-                <InfoRow title="Language" value={movie.language} />
+                <InfoRow title="Language" value={movie.lang} />
 
                 <InfoRow title="Director" value={movie.director} />
 
@@ -283,7 +302,7 @@ function Preview() {
 
                 <InfoRow title="Quality" value={movie.quality} />
 
-                <InfoRow title="Subtitles" value={movie.subtitles} />
+                <InfoRow title="Subtitles" value={movie.subtitle} />
 
                 <InfoRow title="Release Year" value={movie.releaseYear} />
 

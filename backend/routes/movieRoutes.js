@@ -3,6 +3,7 @@ import {
   createMovie,
   getAllMovies,
   getMovieById,
+  getMovieSubtitle,
   updateMovie,
   deleteMovie,
   getTrendingMovies,
@@ -24,6 +25,7 @@ const router = express.Router();
 router.get("/", getAllMovies);
 router.get("/trending", getTrendingMovies);
 router.get("/genre/:genre", getMoviesByGenre);
+router.get("/:id/subtitle", getMovieSubtitle);
 router.get("/:id", getMovieById);
 
 // User routes
