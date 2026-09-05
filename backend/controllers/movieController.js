@@ -242,10 +242,28 @@ export const getAllMovies = async (req, res) => {
       ];
     }
 
+    const hasSearchOrFilter = Boolean(
+      search ||
+      genre ||
+      language ||
+      status ||
+      contentType ||
+      ageRating ||
+      rating ||
+      subtitles ||
+      quality ||
+      duration ||
+      airedDate,
+    );
+
+    if (hasSearchOrFilter && pageNum === 1) {
+      await Movie.updateMany(filter, { $inc: { searchCount: 1 } });
+    }
+
     const totalMovies = await Movie.countDocuments(filter);
     const movies = await Movie.find(filter)
       .populate("createdBy", "name email")
-      .sort({ createdAt: -1 })
+      .sort(hasSearchOrFilter ? { searchCount: -1, createdAt: -1 } : { createdAt: -1 })
       .skip(skip)
       .limit(limitNum);
 
@@ -259,6 +277,24 @@ export const getAllMovies = async (req, res) => {
       movies,
       pagination: paginationData,
     });
+  } catch (error) {
+    errorResponse(res, 500, error.message);
+  }
+};
+
+// Get movie titles for search suggestions
+export const getMovieTitles = async (req, res) => {
+  try {
+    const movies = await Movie.find({ isActive: true })
+      .select("title -_id")
+      .sort({ title: 1 });
+
+    successResponse(
+      res,
+      200,
+      "Movie titles fetched successfully",
+      movies.map((movie) => movie.title),
+    );
   } catch (error) {
     errorResponse(res, 500, error.message);
   }
@@ -554,8 +590,15 @@ export const getMoviesByGenre = async (req, res) => {
       isActive: true,
     });
 
+    if (pageNum === 1) {
+      await Movie.updateMany(
+        { genre, isActive: true },
+        { $inc: { searchCount: 1 } },
+      );
+    }
+
     const movies = await Movie.find({ genre: genre, isActive: true })
-      .sort({ createdAt: -1 })
+      .sort({ searchCount: -1, createdAt: -1 })
       .skip(skip)
       .limit(limitNum)
       .populate("createdBy", "name email");

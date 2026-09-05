@@ -1,50 +1,25 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const mockKeywords = [
-  "Kabaddi",
-  "Kabaddi Kabaddi",
-  "Loot",
-  "Loot 2",
-  "Pashupati Prasad",
-  "Pashupati Prasad 2",
-  "Jatra",
-  "Jatrai Jatra",
-  "Chhakka Panja",
-  "Chhakka Panja 2",
-  "Chhakka Panja 3",
-  "Chhakka Panja 4",
-  "Prem Geet",
-  "Prem Geet 2",
-  "Bulbul",
-  "Darpan Chhaya",
-  "Hostel",
-  "Hostel Returns",
-  "Appa",
-  "Mahapurush",
-  "Action",
-  "Comedy",
-  "Drama",
-  "Romance",
-  "Thriller",
-  "Horror",
-  "Bipin Karki",
-  "Dayahang Rai",
-  "Keki Adhikari",
-  "Nepali Movie",
-];
+import { fetchMovieTitlesAPI } from "../../utils/api";
 
 function Herodiv() {
   const [search, setSearch] = useState("");
+  const [movieTitles, setMovieTitles] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchMovieTitlesAPI()
+      .then(setMovieTitles)
+      .catch((error) => console.error("Failed to load movie suggestions", error));
+  }, []);
 
   const suggestions = useMemo(() => {
     if (!search.trim()) return [];
 
-    return mockKeywords
+    return movieTitles
       .filter((item) => item.toLowerCase().startsWith(search.toLowerCase()))
       .slice(0, 8);
-  }, [search]);
+  }, [movieTitles, search]);
 
   // Unified search handler with validation check
   const handleSearch = () => {

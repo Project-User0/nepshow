@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { nepshow } from "../../images";
 import { LogOut } from "lucide-react";
 import { isAuthenticated, logoutAPI } from "../../utils/authMiddleware";
+import { fetchMovieTitlesAPI } from "../../utils/api";
 
 function Usernav() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,7 +15,14 @@ function Usernav() {
 
   const [scrolled, setScrolled] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [movieTitles, setMovieTitles] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchMovieTitlesAPI()
+      .then(setMovieTitles)
+      .catch((error) => console.error("Failed to load movie suggestions", error));
+  }, []);
 
   const handleScroll = () => {
     if (window.scrollY > 0) {
@@ -35,47 +43,13 @@ function Usernav() {
     logoutAPI();
   };
 
-  const mockKeywords = [
-    "Kabaddi",
-    "Kabaddi Kabaddi",
-    "Loot",
-    "Loot 2",
-    "Pashupati Prasad",
-    "Pashupati Prasad 2",
-    "Jatra",
-    "Jatrai Jatra",
-    "Chhakka Panja",
-    "Chhakka Panja 2",
-    "Chhakka Panja 3",
-    "Chhakka Panja 4",
-    "Prem Geet",
-    "Prem Geet 2",
-    "Bulbul",
-    "Darpan Chhaya",
-    "Hostel",
-    "Hostel Returns",
-    "Appa",
-    "Mahapurush",
-    "Action",
-    "Comedy",
-    "Drama",
-    "Romance",
-    "Thriller",
-    "Horror",
-    "Bipin Karki",
-    "Bagasala",
-    "Dayahang Rai",
-    "Keki Adhikari",
-    "Nepali Movie",
-  ];
-
   const suggestions = useMemo(() => {
     if (!searchTerm.trim()) return [];
 
-    return mockKeywords
+    return movieTitles
       .filter((item) => item.toLowerCase().startsWith(searchTerm.toLowerCase()))
       .slice(0, 8);
-  }, [searchTerm]);
+  }, [movieTitles, searchTerm]);
 
   const handleSearch = (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -102,7 +76,6 @@ function Usernav() {
         </a>
 
         <div className="flex items-center space-x-8">
-          {/* Search Bar */}
           <div
             id="search-bar"
             className="hidden w-[420px] xl:flex lg:flex bg-white rounded-[2px] shadow-lg"
@@ -148,7 +121,6 @@ function Usernav() {
                       key={item}
                       onClick={() => {
                         setSearchTerm(item);
-                        // Automatically execute search when a suggestion is clicked
                         navigate(`/search?q=${encodeURIComponent(item)}`);
                       }}
                       className="w-full text-left px-5 py-3 hover:bg-red-600 transition text-white"

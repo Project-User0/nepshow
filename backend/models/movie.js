@@ -136,6 +136,10 @@ const movieSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    searchCount: {
+      type: Number,
+      default: 0,
+    },
     likes: {
       type: Number,
       default: 0,

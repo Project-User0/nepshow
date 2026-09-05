@@ -2,6 +2,7 @@ import express from "express";
 import {
   createMovie,
   getAllMovies,
+  getMovieTitles,
   getMovieById,
   getMovieSubtitle,
   updateMovie,
@@ -23,6 +24,7 @@ const router = express.Router();
 
 // Public routes
 router.get("/", getAllMovies);
+router.get("/titles", getMovieTitles);
 router.get("/trending", getTrendingMovies);
 router.get("/genre/:genre", getMoviesByGenre);
 router.get("/:id/subtitle", getMovieSubtitle);

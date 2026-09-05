@@ -1,32 +1,52 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { apiClient } from "../../utils/api";
 import Pagination from "../../components/shared/Pagination";
 import MovieCard from "../../components/shared/MovieCard";
+
+const getQuery = (search) => {
+  const params = new URLSearchParams(search);
+  return {
+    q: params.get("q") || "",
+    genre: params.get("genre") || "",
+    language: params.get("language") || "",
+    status: params.get("status") || "",
+    contentType: params.get("contentType") || "",
+    ageRating: params.get("ageRating") || "",
+    rating: params.get("rating") || "",
+    subtitles: params.get("subtitles") || "",
+    quality: params.get("quality") || "",
+    duration: params.get("duration") || "",
+    airedDate: params.get("airedDate") || "",
+  };
+};
 
 function SearchedResult() {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState(null);
+  const [page, setPage] = useState(1);
+  const location = useLocation();
 
-  const getQuery = () => {
-    const params = new URLSearchParams(location.search);
-    return {
-      q: params.get("q") || "",
-      genre: params.get("genre") || "",
-      language: params.get("language") || "",
-      status: params.get("status") || "",
-      contentType: params.get("contentType") || "",
-      ageRating: params.get("ageRating") || "",
-      rating: params.get("rating") || "",
-      subtitles: params.get("subtitles") || "",
-      quality: params.get("quality") || "",
-      duration: params.get("duration") || "",
-      airedDate: params.get("airedDate") || "",
-    };
-  };
+  const loadMovies = useCallback(async (params = {}, requestedPage = 1) => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get("/movies", {
+        params: { ...params, page: requestedPage, limit: 10 },
+      });
+      const movieList =
+        response?.data?.data?.movies || response?.data?.data || [];
+      setResponse(response);
+      setMovies(movieList);
+    } catch (error) {
+      console.error("Failed to fetch movies", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const qparams = getQuery();
+    const qparams = getQuery(location.search);
     // map q -> search for backend
     const params = {
       search: qparams.q,
@@ -60,23 +80,28 @@ function SearchedResult() {
     //   return;
     // }
 
-    loadMovies(params);
-  }, [location.search]);
+    setPage(1);
+    loadMovies(params, 1);
+  }, [location.search, loadMovies]);
 
-  const loadMovies = async (params = {}) => {
-    try {
-      setLoading(true);
-      const response = await apiClient.get("/movies", { params });
-      const movieList =
-        response?.data?.data?.movies || response?.data?.data || [];
-      setResponse(response);
-      setMovies(movieList);
-    } catch (error) {
-      console.error("Failed to fetch movies", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (page === 1) return;
+
+    const query = getQuery(location.search);
+    loadMovies({
+      search: query.q,
+      genre: query.genre,
+      language: query.language,
+      status: query.status,
+      contentType: query.contentType,
+      ageRating: query.ageRating,
+      rating: query.rating,
+      subtitles: query.subtitles,
+      quality: query.quality,
+      duration: query.duration,
+      airedDate: query.airedDate,
+    }, page);
+  }, [page, location.search, loadMovies]);
 
   if (loading) {
     return (
@@ -132,12 +157,12 @@ function SearchedResult() {
 
         <Pagination
           paginationData={{
-            page: response?.data?.paginationData?.page,
-            totalPages: response?.data?.paginationData?.totalPages,
-            hasNextPage: response?.data?.paginationData?.hasNextPage,
-            hasPrevPage: response?.data?.paginationData?.hasPrevPage,
+            page: response?.data?.data?.pagination?.page,
+            totalPages: response?.data?.data?.pagination?.totalPages,
+            hasNextPage: response?.data?.data?.pagination?.hasNextPage,
+            hasPrevPage: response?.data?.data?.pagination?.hasPrevPage,
           }}
-          onPageChange={() => {}}
+          onPageChange={setPage}
         />
       </section>
     </>

@@ -146,6 +146,21 @@ export const fetchMoviesAPI = async (params = {}) => {
   return response.data;
 };
 
+let movieTitlesPromise;
+
+export const fetchMovieTitlesAPI = async () => {
+  if (!movieTitlesPromise) {
+    movieTitlesPromise = apiClient.get('/movies/titles')
+      .then((response) => response.data?.data || [])
+      .catch((error) => {
+        movieTitlesPromise = null;
+        throw error;
+      });
+  }
+
+  return movieTitlesPromise;
+};
+
 export const createMovieAPI = async (movieData) => {
   const response = await apiClient.post('/movies', movieData);
   return response.data;
