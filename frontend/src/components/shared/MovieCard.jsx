@@ -31,7 +31,7 @@ function MovieCard({ movie }) {
                 </span>
 
                 <span className="bg-green-300 text-black px-2 rounded">
-                  {movie.subtitle ? "CC 1" : "CC 0"}
+                  {movie.subtitles.length > 0 ? `CC ${movie.subtitles.length}` : "CC 0"}
                 </span>
 
                 <span className="bg-fuchsia-300 text-black px-2 rounded">
@@ -98,7 +98,7 @@ MovieCard.propTypes = {
     }),
     rating: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     quality: PropTypes.string,
-    subtitle: PropTypes.bool,
+    subtitles: PropTypes.arrayOf(PropTypes.string),
     contentType: PropTypes.string,
     language: PropTypes.string,
     description: PropTypes.string,

@@ -31,6 +31,12 @@ const movieSchema = new mongoose.Schema(
       },
       publicId: String,
     },
+    thumbnailImage: {
+      url: {
+        type: String,
+      },
+      publicId: String,
+    },
     videoUrl: {
       url: String,
       publicId: String,
@@ -49,15 +55,55 @@ const movieSchema = new mongoose.Schema(
       type: String,
       enum: ["Nepali", "English", "Hindi"],
     },
+    subtitles: [
+      {
+        label: {
+          type: String,
+          trim: true,
+        },
+        language: {
+          type: String,
+          enum: ["English", "Nepali", "Hindi", "Spanish", "French"],
+          required: true,
+        },
+        file: {
+          url: {
+            type: String,
+          },
+          publicId: String,
+          resourceType: String,
+        },
+      },
+    ],
     subtitle: {
       type: String,
       enum: ["English", "Nepali", "Hindi", "Spanish", "French"],
     },
+    subtitles: [
+      {
+        label: {
+          type: String,
+          trim: true,
+        },
+        language: {
+          type: String,
+          enum: ["English", "Nepali", "Hindi", "Spanish", "French"],
+        },
+        file: {
+          url: {
+            type: String,
+          },
+          publicId: String,
+          resourceType: String,
+        },
+      },
+    ],
     subtitleFile: {
       url: {
         type: String,
       },
       publicId: String,
+      resourceType: String,
     },
     airedDate: {
       type: Date,

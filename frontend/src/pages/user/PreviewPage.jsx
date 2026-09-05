@@ -27,10 +27,28 @@ function Preview() {
   const videoRef = useRef(null);
   const [videoLoading, setVideoLoading] = useState(true);
 
-  const subtitleTrackUrl = movie?.subtitleFile?.url
-    ? `${(import.meta.env.VITE_API_URL || "http://localhost:8000")
-        .replace(/\/+$/, "")}/api/movies/${movie._id}/subtitle`
-    : "";
+  const subtitleTracks = Array.isArray(movie?.subtitles) && movie.subtitles.length > 0
+    ? movie.subtitles
+        .filter((track) => track?.language || track?.label)
+        .map((track) => ({
+          label: track.label || track.language || "Subtitle",
+          language: track.language || "English",
+          fileUrl: track.file?.url || track.url || "",
+        }))
+    : movie?.subtitleFile?.url
+      ? [{
+          label: movie.subtitle || "English",
+          language: movie.subtitle || "English",
+          fileUrl: movie.subtitleFile.url,
+        }]
+      : [];
+
+  const getSubtitleTrackUrl = (track) => {
+    if (!track?.fileUrl || !movie?._id) return "";
+
+    return `${(import.meta.env.VITE_API_URL || "http://localhost:8000")
+      .replace(/\/+$/, "")}/api/movies/${movie._id}/subtitle?lang=${encodeURIComponent(track.language)}`;
+  };
 
   useEffect(() => {
     const user = getStoredUser();
@@ -107,43 +125,43 @@ function Preview() {
     }
   };
 
-  useEffect(() => {
-    const preventContextMenu = (e) => {
-      e.preventDefault();
-    };
+  // useEffect(() => {
+  //   const preventContextMenu = (e) => {
+  //     e.preventDefault();
+  //   };
 
-    const preventKeys = (e) => {
-      const key = e.key.toLowerCase();
+  //   const preventKeys = (e) => {
+  //     const key = e.key.toLowerCase();
 
-      // F12
-      if (e.key === "F12") {
-        e.preventDefault();
-      }
+  //     // F12
+  //     if (e.key === "F12") {
+  //       e.preventDefault();
+  //     }
 
-      // Ctrl + S
-      if (e.ctrlKey && key === "s") {
-        e.preventDefault();
-      }
+  //     // Ctrl + S
+  //     if (e.ctrlKey && key === "s") {
+  //       e.preventDefault();
+  //     }
 
-      // Ctrl + U
-      if (e.ctrlKey && key === "u") {
-        e.preventDefault();
-      }
+  //     // Ctrl + U
+  //     if (e.ctrlKey && key === "u") {
+  //       e.preventDefault();
+  //     }
 
-      // Ctrl + Shift + I/J/C
-      if (e.ctrlKey && e.shiftKey && ["i", "j", "c"].includes(key)) {
-        e.preventDefault();
-      }
-    };
+  //     // Ctrl + Shift + I/J/C
+  //     if (e.ctrlKey && e.shiftKey && ["i", "j", "c"].includes(key)) {
+  //       e.preventDefault();
+  //     }
+  //   };
 
-    document.addEventListener("contextmenu", preventContextMenu);
-    document.addEventListener("keydown", preventKeys);
+  //   document.addEventListener("contextmenu", preventContextMenu);
+  //   document.addEventListener("keydown", preventKeys);
 
-    return () => {
-      document.removeEventListener("contextmenu", preventContextMenu);
-      document.removeEventListener("keydown", preventKeys);
-    };
-  }, []);
+  //   return () => {
+  //     document.removeEventListener("contextmenu", preventContextMenu);
+  //     document.removeEventListener("keydown", preventKeys);
+  //   };
+  // }, []);
 
   if (loadingMovie) {
     return (
@@ -202,7 +220,7 @@ function Preview() {
             <video
               ref={videoRef}
               className="w-full aspect-video bg-black"
-              poster={movie.posterImage?.url}
+              poster={movie.thumbnailImage?.url || movie.posterImage?.url}
               controls
               controlsList="nodownload"
               disablePictureInPicture
@@ -217,16 +235,17 @@ function Preview() {
               onPlaying={() => setVideoLoading(false)}
             >
               <source src={movie.videoUrl?.url} type="video/mp4" />
-              {subtitleTrackUrl && (
+              {subtitleTracks.map((track, index) => (
                 <track
+                  key={`${track.language}-${index}`}
                   kind="subtitles"
-                  srcLang="en"
-                  label="English"
-                  src={subtitleTrackUrl}
-                  default
+                  srcLang={track.label}
+                  label={track.language}
+                  src={getSubtitleTrackUrl(track)}
+                  default={index === -1}
                   onError={() => console.error("Subtitle track failed to load")}
                 />
-              )}
+              ))}
               Your browser doesn&apos;t support HTML5 video.
             </video>
           </div>
@@ -302,7 +321,7 @@ function Preview() {
 
                 <InfoRow title="Quality" value={movie.quality} />
 
-                <InfoRow title="Subtitles" value={movie.subtitle} />
+                <InfoRow title="Subtitles" value={movie.subtitles?.map((track) => track.language).join(", ")} />
 
                 <InfoRow title="Release Year" value={movie.releaseYear} />
 

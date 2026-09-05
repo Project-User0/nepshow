@@ -9,7 +9,6 @@ import {
   errorResponse,
   isValidObjectId,
 } from "../utils/helpers.js";
-import { sendNewMovieNotificationEmail } from "../config/email.js";
 
 const parseArrayField = (value) => {
   if (!value) return [];
@@ -34,7 +33,6 @@ export const createMovie = async (req, res) => {
       duration,
       rating,
       language,
-      subtitles,
       airedDate,
       status,
       quality,
@@ -44,15 +42,14 @@ export const createMovie = async (req, res) => {
       cast,
       releaseYear,
       tags,
+      subtitleEntries,
     } = req.body;
 
-    // Validate required fields
     if (
       !title ||
       !description ||
       !genre ||
       !language ||
-      !subtitles ||
       !duration ||
       !airedDate
     ) {
@@ -61,6 +58,9 @@ export const createMovie = async (req, res) => {
 
     const parsedCast = parseArrayField(cast);
     const parsedTags = parseArrayField(tags);
+    const parsedSubtitleEntries = Array.isArray(subtitleEntries)
+      ? subtitleEntries
+      : parseArrayField(subtitleEntries);
 
     // Check if movie already exists
     const movieExists = await Movie.findOne({ title });
@@ -68,30 +68,57 @@ export const createMovie = async (req, res) => {
       return errorResponse(res, 409, "Movie already exists");
     }
 
-    // Upload subtitle file if provided
-    let subtitleFile = null;
-    if (req.files?.subtitleFile?.length) {
-      console.log("Uploading subtitle file...");
-      subtitleFile = await uploadToCloudinary(
+    const uploadedSubtitleFiles =
+      req.files?.subtitleFiles || req.files?.subtitleFile || [];
+    const subtitleList = [];
+
+    for (let index = 0; index < parsedSubtitleEntries.length; index += 1) {
+      const item = parsedSubtitleEntries[index];
+      const file = Array.isArray(uploadedSubtitleFiles)
+        ? uploadedSubtitleFiles[index]
+        : uploadedSubtitleFiles;
+
+      if (!file) continue;
+
+      const uploadedSubtitle = await uploadToCloudinary(file.path, "subtitles");
+      subtitleList.push({
+        label: item?.label || item?.language || "Subtitle",
+        language: item?.language || "English",
+        file: uploadedSubtitle,
+      });
+    }
+
+    // Legacy fallback for a single uploaded subtitle file
+    if (subtitleList.length === 0 && req.files?.subtitleFile?.length) {
+      const uploadedSubtitle = await uploadToCloudinary(
         req.files.subtitleFile[0].path,
         "subtitles",
       );
+      subtitleList.push({
+        label: req.body.subtitleLabel || "English",
+        language: req.body.subtitleLanguage || "English",
+        file: uploadedSubtitle,
+      });
     }
 
-    // Upload poster image if provided
     let posterImage = null;
     if (req.files?.posterImage?.length) {
-      console.log("Uploading poster...");
       posterImage = await uploadToCloudinary(
         req.files.posterImage[0].path,
         "posters",
       );
     }
 
-    // Upload video if provided
+    let thumbnailImage = null;
+    if (req.files?.thumbnailImage?.length) {
+      thumbnailImage = await uploadToCloudinary(
+        req.files.thumbnailImage[0].path,
+        "thumbnails",
+      );
+    }
+
     let videoUrl = null;
     if (req.files?.videoFile?.length) {
-      console.log("Uploading video...");
       videoUrl = await uploadToCloudinary(
         req.files.videoFile[0].path,
         "videos",
@@ -105,7 +132,8 @@ export const createMovie = async (req, res) => {
       duration: parseInt(duration, 10),
       rating: rating ? parseFloat(rating) : 0,
       lang: language,
-      subtitles,
+      subtitle: subtitleList[0]?.language || language,
+      subtitles: subtitleList,
       airedDate: new Date(airedDate),
       status: status || "Completed",
       quality: quality || "720p",
@@ -121,8 +149,9 @@ export const createMovie = async (req, res) => {
         req.body.isActive !== undefined ? req.body.isActive === "true" : true,
       createdBy: req.user.userId,
       posterImage,
+      thumbnailImage,
       videoUrl,
-      subtitleFile,
+      subtitleFile: subtitleList[0]?.file || null,
     };
 
     const movie = await Movie.create(movieData);
@@ -158,7 +187,7 @@ export const getAllMovies = async (req, res) => {
       skip,
     } = paginationHelper(page, limit);
 
-    let filter = { };
+    let filter = {};
 
     if (genre) {
       filter.genre = { $in: [genre] };
@@ -263,6 +292,7 @@ export const getMovieById = async (req, res) => {
 export const getMovieSubtitle = async (req, res) => {
   try {
     const { id } = req.params;
+    const { lang } = req.query;
 
     if (!isValidObjectId(id)) {
       return errorResponse(res, 400, "Invalid movie ID");
@@ -270,11 +300,29 @@ export const getMovieSubtitle = async (req, res) => {
 
     const movie = await Movie.findById(id);
 
-    if (!movie?.subtitleFile?.url) {
+    if (!movie) {
+      return errorResponse(res, 404, "Movie not found");
+    }
+
+    const selectedSubtitle =
+      (movie.subtitles || []).find(
+        (entry) =>
+          entry?.language &&
+          (!lang ||
+            entry.language.toLowerCase() === String(lang).toLowerCase()),
+      ) ||
+      (movie.subtitleFile?.url
+        ? {
+            file: { url: movie.subtitleFile.url },
+            language: movie.subtitle || "English",
+          }
+        : null);
+
+    if (!selectedSubtitle?.file?.url) {
       return errorResponse(res, 404, "Subtitle not found");
     }
 
-    const subtitleResponse = await fetch(movie.subtitleFile.url);
+    const subtitleResponse = await fetch(selectedSubtitle.file.url);
 
     if (!subtitleResponse.ok) {
       throw new Error("Failed to fetch subtitle file");
@@ -326,9 +374,9 @@ export const updateMovie = async (req, res) => {
       tags,
       isActive,
       isNewRelease,
+      subtitleEntries,
     } = req.body;
 
-    // Update basic fields
     if (title) movie.title = title;
     if (description) movie.description = description;
     if (genre) movie.genre = genre;
@@ -349,8 +397,40 @@ export const updateMovie = async (req, res) => {
     if (isNewRelease !== undefined)
       movie.isNewRelease = isNewRelease === "true";
 
-    // Update subtitleFile image if provided
-    if (req.files && req.files.subtitleFile) {
+    const parsedSubtitleEntries = Array.isArray(subtitleEntries)
+      ? subtitleEntries
+      : parseArrayField(subtitleEntries);
+
+    if (parsedSubtitleEntries.length) {
+      const uploadedSubtitleFiles =
+        req.files?.subtitleFiles || req.files?.subtitleFile || [];
+      const subtitleList = [];
+
+      for (let index = 0; index < parsedSubtitleEntries.length; index += 1) {
+        const item = parsedSubtitleEntries[index];
+        const file = Array.isArray(uploadedSubtitleFiles)
+          ? uploadedSubtitleFiles[index]
+          : uploadedSubtitleFiles;
+
+        if (!file) continue;
+
+        const uploadedSubtitle = await uploadToCloudinary(
+          file.path,
+          "subtitles",
+        );
+        subtitleList.push({
+          label: item?.label || item?.language || "Subtitle",
+          language: item?.language || "English",
+          file: uploadedSubtitle,
+        });
+      }
+
+      if (subtitleList.length) {
+        movie.subtitles = subtitleList;
+        movie.subtitle = subtitleList[0].language;
+        movie.subtitleFile = subtitleList[0].file;
+      }
+    } else if (req.files && req.files.subtitleFile) {
       if (movie.subtitleFile && movie.subtitleFile.publicId) {
         await deleteFromCloudinary(movie.subtitleFile.publicId);
       }
@@ -358,6 +438,14 @@ export const updateMovie = async (req, res) => {
         req.files.subtitleFile.path,
         "subtitles",
       );
+      movie.subtitle = movie.subtitle || "English";
+      movie.subtitles = [
+        {
+          label: movie.subtitle,
+          language: movie.subtitle,
+          file: movie.subtitleFile,
+        },
+      ];
     }
 
     // Update poster image if provided
@@ -368,6 +456,17 @@ export const updateMovie = async (req, res) => {
       movie.posterImage = await uploadToCloudinary(
         req.files.posterImage.path,
         "posters",
+      );
+    }
+
+    // Update thumbnail image if provided
+    if (req.files && req.files.thumbnailImage) {
+      if (movie.thumbnailImage && movie.thumbnailImage.publicId) {
+        await deleteFromCloudinary(movie.thumbnailImage.publicId);
+      }
+      movie.thumbnailImage = await uploadToCloudinary(
+        req.files.thumbnailImage.path,
+        "thumbnails",
       );
     }
 

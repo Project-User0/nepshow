@@ -21,6 +21,9 @@ const ageRatingOptions = ["G", "PG", "PG-13", "R", "NC-17"];
 
 const MovieForm = ({ movie, onSave, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [subtitleEntries, setSubtitleEntries] = useState([
+    { label: "", language: subtitleOptions[0], file: null },
+  ]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -42,11 +45,27 @@ const MovieForm = ({ movie, onSave, onClose }) => {
     isNewRelease: false,
     subtitleFile: null,
     posterImage: null,
+    thumbnailImage: null,
     videoFile: null,
   });
 
   useEffect(() => {
     if (movie) {
+      const existingSubtitles =
+        Array.isArray(movie.subtitles) && movie.subtitles.length > 0
+          ? movie.subtitles.map((track) => ({
+              label: track.label || track.language || "",
+              language: track.language || subtitleOptions[0],
+              file: null,
+            }))
+          : [
+              {
+                label: movie.subtitle || "",
+                language: movie.subtitle || subtitleOptions[0],
+                file: null,
+              },
+            ];
+
       setFormData({
         title: movie.title || "",
         description: movie.description || "",
@@ -70,8 +89,14 @@ const MovieForm = ({ movie, onSave, onClose }) => {
         isNewRelease: movie.isNewRelease !== false,
         subtitleFile: null,
         posterImage: null,
+        thumbnailImage: null,
         videoFile: null,
       });
+      setSubtitleEntries(existingSubtitles);
+    } else {
+      setSubtitleEntries([
+        { label: "", language: subtitleOptions[0], file: null },
+      ]);
     }
   }, [movie]);
 
@@ -84,6 +109,37 @@ const MovieForm = ({ movie, onSave, onClose }) => {
     }
 
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubtitleEntryChange = (index, field, value) => {
+    setSubtitleEntries((prev) =>
+      prev.map((entry, entryIndex) =>
+        entryIndex === index ? { ...entry, [field]: value } : entry,
+      ),
+    );
+  };
+
+  const handleSubtitleFileChange = (index, e) => {
+    const file = e.target.files?.[0] || null;
+    setSubtitleEntries((prev) =>
+      prev.map((entry, entryIndex) =>
+        entryIndex === index ? { ...entry, file } : entry,
+      ),
+    );
+  };
+
+  const addSubtitleEntry = () => {
+    setSubtitleEntries((prev) => [
+      ...prev,
+      { label: "", language: subtitleOptions[0], file: null },
+    ]);
+  };
+
+  const removeSubtitleEntry = (index) => {
+    setSubtitleEntries((prev) => {
+      if (prev.length === 1) return prev;
+      return prev.filter((_, entryIndex) => entryIndex !== index);
+    });
   };
 
   const handleFileChange = (e) => {
@@ -103,7 +159,16 @@ const MovieForm = ({ movie, onSave, onClose }) => {
       payload.append("description", formData.description);
       payload.append("genre", formData.genre);
       payload.append("language", formData.language);
-      payload.append("subtitles", formData.subtitles);
+      payload.append("subtitles", formData.subtitles || "");
+      payload.append(
+        "subtitleEntries",
+        JSON.stringify(
+          subtitleEntries.map((entry) => ({
+            label: entry.label || entry.language,
+            language: entry.language,
+          })),
+        ),
+      );
       payload.append("director", formData.director);
       payload.append("releaseYear", formData.releaseYear);
       payload.append("rating", formData.rating);
@@ -134,12 +199,18 @@ const MovieForm = ({ movie, onSave, onClose }) => {
       payload.append("isActive", String(formData.isActive));
       payload.append("isNewRelease", String(formData.isNewRelease));
 
-      if (formData.subtitleFile) {
-        payload.append("subtitleFile", formData.subtitleFile);
-      }
+      subtitleEntries.forEach((entry) => {
+        if (entry.file) {
+          payload.append("subtitleFiles", entry.file);
+        }
+      });
 
       if (formData.posterImage) {
         payload.append("posterImage", formData.posterImage);
+      }
+
+            if (formData.thumbnailImage) {
+        payload.append("thumbnailImage", formData.thumbnailImage);
       }
 
       if (formData.videoFile) {
@@ -248,34 +319,77 @@ const MovieForm = ({ movie, onSave, onClose }) => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Subtitles
-              </label>
-              <select
-                name="subtitles"
-                value={formData.subtitles}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              >
-                {subtitleOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
+            <div className="md:col-span-2">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Subtitle Tracks
+                </label>
+                <button
+                  type="button"
+                  onClick={addSubtitleEntry}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  + Add subtitle
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {subtitleEntries.map((entry, index) => (
+                  <div
+                    key={`${entry.language}-${index}`}
+                    className="grid grid-cols-1 md:grid-cols-[1fr_180px_1fr_auto] gap-2 items-center rounded-lg border border-gray-200 p-3 bg-gray-50"
+                  >
+                    <input
+                      type="text"
+                      value={entry.label}
+                      onChange={(e) =>
+                        handleSubtitleEntryChange(
+                          index,
+                          "label",
+                          e.target.value,
+                        )
+                      }
+                      placeholder="Subtitle name"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+
+                    <select
+                      value={entry.language}
+                      onChange={(e) =>
+                        handleSubtitleEntryChange(
+                          index,
+                          "language",
+                          e.target.value,
+                        )
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      {subtitleOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+
+                    <input
+                      type="file"
+                      accept=".srt,.vtt"
+                      onChange={(e) => handleSubtitleFileChange(index, e)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+
+                    {subtitleEntries.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeSubtitleEntry(index)}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Subtitle File
-              </label>
-              <input
-                type="file"
-                name="subtitleFile"
-                accept=".srt,.vtt"
-                onChange={handleFileChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              />
+              </div>
             </div>
 
             <div>
@@ -442,6 +556,18 @@ const MovieForm = ({ movie, onSave, onClose }) => {
               <input
                 type="file"
                 name="posterImage"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Thumbnail Image
+              </label>
+              <input
+                type="file"
+                name="thumbnailImage"
                 accept="image/*"
                 onChange={handleFileChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"

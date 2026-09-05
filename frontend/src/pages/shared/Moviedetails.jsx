@@ -140,7 +140,7 @@ function Moviedetails() {
                     {movie.quality || "HD"}
                   </div>
                   <div className="h-5 w-8 flex items-center justify-center text-center mr-[2px] bg-green-300 text-black text-[12px] ml-[2px]">
-                    {movie.subtitle ? "CC 1" : "CC 0"}
+                    {movie.subtitles.length > 0 ? `CC ${movie.subtitles.length}` : "CC 0"}
                   </div>
                   <div className="h-5 w-8 flex items-center justify-center rounded-r-[4px] text-[13px] text-black bg-fuchsia-300">
                     {movie.contentType === "Movie"

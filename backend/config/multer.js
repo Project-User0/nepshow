@@ -40,8 +40,9 @@ const upload = multer({
 });
 
 export const uploadMovieMedia = upload.fields([
-  { name: "subtitleFile", maxCount: 1 },
+  { name: "subtitleFiles", maxCount: 20 },
   { name: "posterImage", maxCount: 1 },
+  { name: "thumbnailImage", maxCount: 1 },
   { name: "videoFile", maxCount: 1 },
 ]);
 
