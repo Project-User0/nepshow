@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Usernav from "../../components/user/Usernav";
 import Footer from "../../components/landing/Footer";
@@ -14,6 +14,8 @@ function SharablePage() {
   const [error, setError] = useState("");
 
   const token = useMemo(() => searchParams.get("token") || "", [searchParams]);
+
+  const videoRef = useRef(null);
 
   useEffect(() => {
     if (!id || !token) {
@@ -40,6 +42,34 @@ function SharablePage() {
 
     loadMovie();
   }, [id, token]);
+
+  const subtitleTracks =
+    Array.isArray(movie?.subtitles) && movie.subtitles.length > 0
+      ? movie.subtitles
+          .filter((track) => track?.language || track?.label)
+          .map((track) => ({
+            label: track.label || track.language || "Subtitle",
+            language: track.language || "English",
+            fileUrl: track.file?.url || track.url || "",
+          }))
+      : movie?.subtitleFile?.url
+        ? [
+            {
+              label: movie.subtitle || "English",
+              language: movie.subtitle || "English",
+              fileUrl: movie.subtitleFile.url,
+            },
+          ]
+        : [];
+
+  const getSubtitleTrackUrl = (track) => {
+    if (!track?.fileUrl || !movie?._id) return "";
+
+    return `${(import.meta.env.VITE_API_URL || "http://localhost:8000").replace(
+      /\/+$/,
+      "",
+    )}/api/movies/${movie._id}/subtitle?lang=${encodeURIComponent(track.language)}`;
+  };
 
   useEffect(() => {
     const preventContextMenu = (e) => {
@@ -119,16 +149,40 @@ function SharablePage() {
           <div className="mx-auto max-w-6xl px-5 ">
             <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-black shadow-2xl">
               <video
-                className="aspect-video w-full bg-black"
+                ref={videoRef}
+                className="w-full aspect-video bg-black"
+                poster={movie.thumbnailImage?.url || movie.posterImage?.url}
                 controls
                 controlsList="nodownload"
-                poster={movie.posterImage?.url}
+                disablePictureInPicture
+                disableRemotePlayback
+                playsInline
                 preload="metadata"
+                crossOrigin="anonymous"
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
               >
                 <source src={movie.videoUrl?.url} type="video/mp4" />
+                {subtitleTracks.map((track, index) => (
+                  <track
+                    key={`${track.language}-${index}`}
+                    kind="subtitles"
+                    srcLang={track.label}
+                    label={track.language}
+                    src={getSubtitleTrackUrl(track)}
+                    default={index === -1}
+                  />
+                ))}
+                Your browser doesn&apos;t support HTML5 video.
               </video>
               <div className="absolute top-4 left-4">
-                <img src={nepshow} alt="Logo" width={100} height={100} className="mx-auto " />
+                <img
+                  src={nepshow}
+                  alt="Logo"
+                  width={100}
+                  height={100}
+                  className="mx-auto "
+                />
               </div>
             </div>
             <div className="mt-8 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 text-white">

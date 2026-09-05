@@ -125,43 +125,43 @@ function Preview() {
     }
   };
 
-  // useEffect(() => {
-  //   const preventContextMenu = (e) => {
-  //     e.preventDefault();
-  //   };
+  useEffect(() => {
+    const preventContextMenu = (e) => {
+      e.preventDefault();
+    };
 
-  //   const preventKeys = (e) => {
-  //     const key = e.key.toLowerCase();
+    const preventKeys = (e) => {
+      const key = e.key.toLowerCase();
 
-  //     // F12
-  //     if (e.key === "F12") {
-  //       e.preventDefault();
-  //     }
+      // F12
+      if (e.key === "F12") {
+        e.preventDefault();
+      }
 
-  //     // Ctrl + S
-  //     if (e.ctrlKey && key === "s") {
-  //       e.preventDefault();
-  //     }
+      // Ctrl + S
+      if (e.ctrlKey && key === "s") {
+        e.preventDefault();
+      }
 
-  //     // Ctrl + U
-  //     if (e.ctrlKey && key === "u") {
-  //       e.preventDefault();
-  //     }
+      // Ctrl + U
+      if (e.ctrlKey && key === "u") {
+        e.preventDefault();
+      }
 
-  //     // Ctrl + Shift + I/J/C
-  //     if (e.ctrlKey && e.shiftKey && ["i", "j", "c"].includes(key)) {
-  //       e.preventDefault();
-  //     }
-  //   };
+      // Ctrl + Shift + I/J/C
+      if (e.ctrlKey && e.shiftKey && ["i", "j", "c"].includes(key)) {
+        e.preventDefault();
+      }
+    };
 
-  //   document.addEventListener("contextmenu", preventContextMenu);
-  //   document.addEventListener("keydown", preventKeys);
+    document.addEventListener("contextmenu", preventContextMenu);
+    document.addEventListener("keydown", preventKeys);
 
-  //   return () => {
-  //     document.removeEventListener("contextmenu", preventContextMenu);
-  //     document.removeEventListener("keydown", preventKeys);
-  //   };
-  // }, []);
+    return () => {
+      document.removeEventListener("contextmenu", preventContextMenu);
+      document.removeEventListener("keydown", preventKeys);
+    };
+  }, []);
 
   if (loadingMovie) {
     return (

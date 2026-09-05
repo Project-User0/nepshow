@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { nepshow } from "../../images";
 import { LogOut } from "lucide-react";
@@ -35,6 +35,47 @@ function Usernav() {
     logoutAPI();
   };
 
+  const mockKeywords = [
+    "Kabaddi",
+    "Kabaddi Kabaddi",
+    "Loot",
+    "Loot 2",
+    "Pashupati Prasad",
+    "Pashupati Prasad 2",
+    "Jatra",
+    "Jatrai Jatra",
+    "Chhakka Panja",
+    "Chhakka Panja 2",
+    "Chhakka Panja 3",
+    "Chhakka Panja 4",
+    "Prem Geet",
+    "Prem Geet 2",
+    "Bulbul",
+    "Darpan Chhaya",
+    "Hostel",
+    "Hostel Returns",
+    "Appa",
+    "Mahapurush",
+    "Action",
+    "Comedy",
+    "Drama",
+    "Romance",
+    "Thriller",
+    "Horror",
+    "Bipin Karki",
+    "Dayahang Rai",
+    "Keki Adhikari",
+    "Nepali Movie",
+  ];
+
+  const suggestions = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+
+    return mockKeywords
+      .filter((item) => item.toLowerCase().startsWith(searchTerm.toLowerCase()))
+      .slice(0, 8);
+  }, [searchTerm]);
+
   const handleSearch = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!searchTerm || !searchTerm.trim()) return;
@@ -45,7 +86,9 @@ function Usernav() {
     <nav
       className={`py-2.5 fixed top-0 left-0 right-0 z-10 transition duration-300 ease-out 
        ${
-         scrolled ? "bg-[#0d0d0fab] backdrop-blur-md" : "bg-[#0d0d0f] lg:bg-transparent"
+         scrolled
+           ? "bg-[#0d0d0fab] backdrop-blur-md"
+           : "bg-[#0d0d0f] lg:bg-transparent"
        }`}
     >
       <div className="flex flex-wrap items-center justify-between xl:justify-around lg:justify-around max-w-screen px-4">
@@ -56,43 +99,64 @@ function Usernav() {
             alt="NepSHOW"
           />
         </a>
-        
+
         <div className="flex items-center space-x-8">
           {/* Search Bar */}
           <div
             id="search-bar"
             className="hidden w-[420px] xl:flex lg:flex bg-white rounded-[2px] shadow-lg"
           >
-            <form className="flex items-center justify-center p-1 w-full" onSubmit={handleSearch}>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search here"
-                className="w-full rounded-md px-2 py-1 focus:outline-none"
-              />
-              <button className="bg-transparent" type="submit">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="h-5 w-5 font-semibold bg-transparent"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                  />
-                </svg>
-              </button>
-              <a
-                href="/filter"
-                className="bg-gray-800 text-white rounded-md px-4 py-1 ml-2 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-opacity-50"
-              >
-                Filter
-              </a>
+            <form className="relative w-full" onSubmit={handleSearch}>
+              <div className="flex items-center justify-between p-1 w-full">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search here"
+                  className="w-full rounded-md px-2 py-1 focus:outline-none"
+                />
+                <div className="flex items-center space-x-2">
+                  <button className="bg-transparent" type="submit">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="h-5 w-5 font-semibold bg-transparent"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                      />
+                    </svg>
+                  </button>
+                  <a
+                    href="/filter"
+                    className="bg-gray-800 text-white rounded-md px-4 py-1 ml-2 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-opacity-50"
+                  >
+                    Filter
+                  </a>
+                </div>
+              </div>
+              {suggestions.length > 0 && (
+                <div className="absolute left-0 right-0 mt-2 bg-neutral-900 border border-neutral-700 rounded-xl overflow-hidden shadow-2xl z-50">
+                  {suggestions.map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => {
+                        setSearchTerm(item);
+                        // Automatically execute search when a suggestion is clicked
+                        navigate(`/search?q=${encodeURIComponent(item)}`);
+                      }}
+                      className="w-full text-left px-5 py-3 hover:bg-red-600 transition text-white"
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              )}
             </form>
           </div>
 
