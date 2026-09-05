@@ -63,6 +63,7 @@ function Usernav() {
     "Thriller",
     "Horror",
     "Bipin Karki",
+    "Bagasala",
     "Dayahang Rai",
     "Keki Adhikari",
     "Nepali Movie",

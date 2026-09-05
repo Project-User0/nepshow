@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
+import Pagination from '../../shared/Pagination';
 
-const PaymentTable = ({ payments }) => {
+const PaymentTable = ({ payments, pagination, onPageChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc');
@@ -66,7 +67,7 @@ const PaymentTable = ({ payments }) => {
                 <td className="px-6 py-4 text-sm">{payment.id}</td>
                 <td className="px-6 py-4 text-sm font-medium">{payment.transactionId}</td>
                 <td className="px-6 py-4 text-sm">{payment.userName}</td>
-                <td className="px-6 py-4 text-sm font-semibold text-green-600">${payment.amount.toFixed(2)}</td>
+                <td className="px-6 py-4 text-sm font-semibold text-green-600">Rs.{payment.amount.toFixed(2)}</td>
                 <td className="px-6 py-4 text-sm">{payment.paymentMethod}</td>
                 <td className="px-6 py-4 text-sm">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -87,6 +88,7 @@ const PaymentTable = ({ payments }) => {
           </tbody>
         </table>
       </div>
+      <Pagination paginationData={pagination} onPageChange={onPageChange} />
     </div>
   );
 };

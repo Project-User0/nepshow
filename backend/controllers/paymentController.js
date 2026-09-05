@@ -34,7 +34,7 @@ export const createPayment = async (req, res) => {
       user: userId,
       plan,
       amount,
-      currency: currency || "USD",
+      currency: currency || "NPR",
       paymentMethod,
       transactionId,
       status: "pending",

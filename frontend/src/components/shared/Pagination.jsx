@@ -19,7 +19,7 @@ function Pagination({ paginationData, onPageChange }) {
             disabled={!hasPrevPage}
             className={`inline-flex items-center rounded-xl border border-neutral-700 px-4 py-2.5 text-xs sm:text-sm font-medium transition select-none ${
               hasPrevPage
-                ? "text-gray-200 hover:bg-gray-200 hover:text-black active:scale-95 cursor-pointer"
+                ? "text-gray-400 hover:bg-gray-200 hover:text-black active:scale-95 cursor-pointer"
                 : "text-neutral-600 border-neutral-800 cursor-not-allowed opacity-40"
             }`}
           >
@@ -47,7 +47,7 @@ function Pagination({ paginationData, onPageChange }) {
             disabled={!hasNextPage}
             className={`inline-flex items-center rounded-xl border border-neutral-700 px-4 py-2.5 text-xs sm:text-sm font-medium transition select-none ${
               hasNextPage
-                ? "text-gray-200 hover:bg-gray-200 hover:text-black active:scale-95 cursor-pointer"
+                ? "text-gray-400 hover:bg-gray-200 hover:text-black active:scale-95 cursor-pointer"
                 : "text-neutral-600 border-neutral-800 cursor-not-allowed opacity-40"
             }`}
           >
@@ -66,8 +66,8 @@ function Pagination({ paginationData, onPageChange }) {
 
         </div>
 
-        <div className="hidden sm:block text-sm text-neutral-400 font-medium whitespace-nowrap bg-neutral-900/40 px-4 py-2 rounded-xl border border-neutral-800/50">
-          Showing page <span className="text-white font-semibold">{page}</span> of <span className="text-white font-semibold">{totalPages}</span>
+        <div className="hidden sm:block text-sm text-neutral-400 font-medium whitespace-nowrap px-4 py-2 rounded-xl border border-neutral-800/50">
+          Showing page <span className="font-semibold">{page}</span> of <span className="font-semibold">{totalPages}</span>
         </div>
 
       </div>

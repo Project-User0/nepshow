@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { ChevronUp, ChevronDown, Edit, Trash2 } from "lucide-react";
+import Pagination from '../../shared/Pagination';
 
-const UserTable = ({ users, onEdit, onDelete }) => {
+const UserTable = ({ users, pagination, onPageChange, onEdit, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortKey, setSortKey] = useState(null);
   const [sortOrder, setSortOrder] = useState("asc");
@@ -160,6 +161,7 @@ const UserTable = ({ users, onEdit, onDelete }) => {
           </tbody>
         </table>
       </div>
+      <Pagination paginationData={pagination} onPageChange={onPageChange} />
     </div>
   );
 };

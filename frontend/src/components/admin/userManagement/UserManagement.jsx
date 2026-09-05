@@ -7,6 +7,8 @@ import { createUserAPI, deleteUserAPI, fetchUsersAPI, updateUserAPI } from '../.
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -16,8 +18,9 @@ const UserManagement = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetchUsersAPI();
+      const response = await fetchUsersAPI({ page, limit: 10 });
       const list = response?.data?.users || [];
+      setPagination(response?.data?.pagination || null);
       setUsers(list.map((user) => ({
         _id: user._id,
         id: user._id,
@@ -43,7 +46,7 @@ const UserManagement = () => {
 
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [page]);
 
   const handleAddUser = () => {
     setShowCreateForm(true);
@@ -120,7 +123,7 @@ const UserManagement = () => {
       </div>
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-      {loading ? <div className="rounded-lg bg-white p-6 text-gray-600">Loading users...</div> : <UserTable users={users} onEdit={handleEditUser} onDelete={handleDeleteUser} />}
+      {loading ? <div className="rounded-lg bg-white p-6 text-gray-600">Loading users...</div> : <UserTable users={users} pagination={pagination} onPageChange={setPage} onEdit={handleEditUser} onDelete={handleDeleteUser} />}
 
       {showCreateForm && (
         <CreateUserFormModal

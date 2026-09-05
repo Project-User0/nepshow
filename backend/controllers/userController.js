@@ -231,6 +231,12 @@ export const deleteUser = async (req, res) => {
 // Get user statistics (Admin only)
 export const getUserStatistics = async (req, res) => {
   try {
+    const now = new Date();
+    const weeklyStart = new Date(now);
+    weeklyStart.setHours(0, 0, 0, 0);
+    weeklyStart.setDate(weeklyStart.getDate() - 6);
+
+    const monthlyStart = new Date(now.getFullYear(), now.getMonth() - 11, 1);
     const totalUsers = await User.countDocuments();
     const activeUsers = await User.countDocuments({ isActive: true });
     const adminUsers = await User.countDocuments({ role: "admin" });
@@ -254,6 +260,54 @@ export const getUserStatistics = async (req, res) => {
       },
     ]);
 
+    const [weeklyNewUsers, weeklyActiveUsers, monthlyUserGrowth] = await Promise.all([
+      User.aggregate([
+        { $match: { createdAt: { $gte: weeklyStart } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      User.aggregate([
+        { $match: { lastLogin: { $gte: weeklyStart }, isActive: true } },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$lastLogin" } },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      User.aggregate([
+        { $match: { createdAt: { $gte: monthlyStart } } },
+        {
+          $group: {
+            _id: {
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
+            },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { "_id.year": 1, "_id.month": 1 } },
+      ]),
+    ]);
+
+    const weeklyNewUsersByDate = new Map(weeklyNewUsers.map((item) => [item._id, item.count]));
+    const weeklyActiveUsersByDate = new Map(weeklyActiveUsers.map((item) => [item._id, item.count]));
+    const weeklyUserGrowth = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(weeklyStart);
+      date.setDate(weeklyStart.getDate() + index);
+      const dateKey = date.toISOString().slice(0, 10);
+
+      return {
+        date: dateKey,
+        newUsers: weeklyNewUsersByDate.get(dateKey) || 0,
+        activeUsers: weeklyActiveUsersByDate.get(dateKey) || 0,
+      };
+    });
+
     successResponse(res, 200, "User statistics fetched successfully", {
       totalUsers,
       activeUsers,
@@ -261,6 +315,8 @@ export const getUserStatistics = async (req, res) => {
       premiumUsers,
       usersByRole,
       subscriptionStats,
+      monthlyUserGrowth,
+      weeklyUserGrowth,
     });
   } catch (error) {
     errorResponse(res, 500, error.message);

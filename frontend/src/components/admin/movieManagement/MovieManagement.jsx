@@ -6,19 +6,22 @@ import { apiClient } from '../../../utils/api';
 
 const MovieManagement = () => {
   const [movies, setMovies] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingMovie, setEditingMovie] = useState(null);
 
   useEffect(() => {
     loadMovies();
-  }, []);
+     }, [page]);
 
   const loadMovies = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/movies');
+         const response = await apiClient.get('/movies', { params: { page, limit: 10 } });
       const movieList = response?.data?.data?.movies || response?.data?.data || [];
+         setPagination(response?.data?.data?.pagination || null);
       setMovies(movieList);
     } catch (error) {
       console.error('Failed to fetch movies', error);
@@ -79,7 +82,7 @@ const MovieManagement = () => {
         </button>
       </div>
 
-      {loading ? <p className="text-gray-600">Loading movies...</p> : <MovieTable movies={movies} onEdit={handleEditMovie} onDelete={handleDeleteMovie} />}
+      {loading ? <p className="text-gray-600">Loading movies...</p> : <MovieTable movies={movies} pagination={pagination} onPageChange={setPage} onEdit={handleEditMovie} onDelete={handleDeleteMovie} />}
 
       {showForm && (
         <MovieForm movie={editingMovie} onSave={handleSaveMovie} onClose={() => setShowForm(false)} />

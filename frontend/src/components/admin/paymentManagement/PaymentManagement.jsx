@@ -1,19 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import PaymentTable from './PaymentTable';
 import { fetchPaymentsAPI } from '../../../utils/api';
 
 const PaymentManagement = () => {
   const [payments, setPayments] = useState([]);
+  const [pagination, setPagination] = useState(null);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const loadPayments = async () => {
       try {
-        const response = await fetchPaymentsAPI();
+        const response = await fetchPaymentsAPI({ page, limit: 10 });
         const list = response?.data?.payments || [];
+        setPagination(response?.data?.pagination || null);
         setPayments(list.map((payment, index) => ({
-          id: index + 1,
+          id: (page - 1) * 10 + index + 1,
           transactionId: payment.transactionId,
           userName: payment.user?.name || 'Unknown',
           amount: payment.amount,
@@ -29,7 +32,7 @@ const PaymentManagement = () => {
     };
 
     loadPayments();
-  }, []);
+  }, [page]);
 
   return (
     <div className="space-y-6">
@@ -39,7 +42,7 @@ const PaymentManagement = () => {
       </div>
 
       {error && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
-      {loading ? <div className="rounded-lg bg-white p-6 text-gray-600">Loading payments...</div> : <PaymentTable payments={payments} />}
+      {loading ? <div className="rounded-lg bg-white p-6 text-gray-600">Loading payments...</div> : <PaymentTable payments={payments} pagination={pagination} onPageChange={setPage} />}
     </div>
   );
 };

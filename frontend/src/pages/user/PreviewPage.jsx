@@ -25,6 +25,7 @@ function Preview() {
   const [sharing, setSharing] = useState(false);
 
   const videoRef = useRef(null);
+  const loadedMovieId = useRef(null);
   const [videoLoading, setVideoLoading] = useState(true);
 
   const subtitleTracks = Array.isArray(movie?.subtitles) && movie.subtitles.length > 0
@@ -57,8 +58,9 @@ function Preview() {
       return;
     }
 
-    if (!id) return;
+    if (!id || loadedMovieId.current === id) return;
 
+    loadedMovieId.current = id;
     loadMovie();
     loadRecommendedMovies();
   }, [id, navigate]);

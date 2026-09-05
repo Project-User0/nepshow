@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -25,25 +25,32 @@ import { apiClient } from '../../../utils/api';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
+  const [movies, setMovies] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [userStatsRes, paymentStatsRes] = await Promise.all([
+        const [userStatsRes, paymentStatsRes, moviesRes, paymentsRes] = await Promise.all([
           apiClient.get('/users/stats'),
           apiClient.get('/payments/stats'),
+          apiClient.get('/movies?limit=3'),
+          apiClient.get('/payments?limit=3'),
         ]);
+        const userStats = userStatsRes.data?.data || {};
+        const paymentStats = paymentStatsRes.data?.data || {};
         setStats({
-          users: userStatsRes.data?.data?.totalUsers || 0,
-          activeUsers: userStatsRes.data?.data?.activeUsers || 0,
-          premiumUsers: userStatsRes.data?.data?.premiumUsers || 0,
-          movies: 0,
-          revenue: paymentStatsRes.data?.data?.totalRevenue || 0,
-          reviews: 0,
+          users: userStats.totalUsers || 0,
+          activeUsers: userStats.activeUsers || 0,
+          premiumUsers: userStats.premiumUsers || 0,
+          revenue: paymentStats.totalRevenue || 0,
+          monthlyUserGrowth: userStats.monthlyUserGrowth || [],
+          weeklyUserGrowth: userStats.weeklyUserGrowth || [],
+          monthlyRevenue: paymentStats.monthlyRevenue || [],
         });
-        setPayments(paymentStatsRes.data?.data?.monthlyRevenue || []);
+        setMovies(moviesRes.data?.data?.movies || []);
+        setPayments(paymentsRes.data?.data?.payments || []);
       } catch (error) {
         console.error('Dashboard data load failed', error);
       } finally {
@@ -54,14 +61,14 @@ const Dashboard = () => {
     loadData();
   }, []);
 
-  const revenueData = [
-    { month: 'Jan', revenue: 4000, users: 2400 },
-    { month: 'Feb', revenue: 3000, users: 1398 },
-    { month: 'Mar', revenue: 2000, users: 9800 },
-    { month: 'Apr', revenue: 2780, users: 3908 },
-    { month: 'May', revenue: 1890, users: 4800 },
-    { month: 'Jun', revenue: 2390, users: 3800 },
-  ];
+  const revenueByMonth = new Map(
+    (stats?.monthlyRevenue || []).map((item) => [`${item._id.year}-${item._id.month}`, item.revenue]),
+  );
+  const revenueData = (stats?.monthlyUserGrowth || []).map((item) => ({
+    month: new Date(item._id.year, item._id.month - 1).toLocaleString('en-US', { month: 'short' }),
+    revenue: revenueByMonth.get(`${item._id.year}-${item._id.month}`) || 0,
+    users: item.count,
+  }));
 
   const movieData = [
     { name: 'Premium', value: Math.max(stats?.premiumUsers || 0, 1) },
@@ -69,15 +76,11 @@ const Dashboard = () => {
     { name: 'Users', value: Math.max(stats?.users || 0, 1) },
   ];
 
-  const userGrowthData = [
-    { day: 'Mon', newUsers: 120, activeUsers: 2400 },
-    { day: 'Tue', newUsers: 132, activeUsers: 2210 },
-    { day: 'Wed', newUsers: 101, activeUsers: 2290 },
-    { day: 'Thu', newUsers: 134, activeUsers: 2000 },
-    { day: 'Fri', newUsers: 90, activeUsers: 2181 },
-    { day: 'Sat', newUsers: 230, activeUsers: 2500 },
-    { day: 'Sun', newUsers: 200, activeUsers: 2100 },
-  ];
+  const userGrowthData = (stats?.weeklyUserGrowth || []).map((item) => ({
+    day: new Date(`${item.date}T00:00:00`).toLocaleString('en-US', { weekday: 'short' }),
+    newUsers: item.newUsers,
+    activeUsers: item.activeUsers,
+  }));
 
   const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
 
@@ -106,7 +109,7 @@ const Dashboard = () => {
     {
       title: 'Recent Activity',
       value: payments.length.toString(),
-      change: 'monthly entries',
+      change: 'recent payments',
       icon: MessageSquare,
       color: 'bg-orange-500',
     },
@@ -156,15 +159,15 @@ const Dashboard = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="revenue" fill="#3b82f6" name="Revenue ($)" />
+              <Bar dataKey="revenue" fill="#3b82f6" name="Revenue (Rs)" />
               <Bar dataKey="users" fill="#8b5cf6" name="Users" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Movie Genre Distribution */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Movie by Genre</h2>
+        <div className="bg-white rounded-lg shadow-md p-2">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Users Overview</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -220,54 +223,37 @@ const Dashboard = () => {
         {/* Recent Movies */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Movies Added</h2>
-          <div className="space-y-3">
-            {[
-              { title: 'Inception', date: '2 days ago', views: 1230 },
-              { title: 'The Matrix', date: '5 days ago', views: 892 },
-              { title: 'Interstellar', date: '1 week ago', views: 2145 },
-            ].map((movie, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border-b border-gray-200 hover:bg-gray-50">
+          <div className="space-y-3 overflow-y-scroll h-64">
+            {movies.map((movie) => (
+              <div key={movie._id} className="flex items-center justify-between p-3 border-b border-gray-200 hover:bg-gray-50">
                 <div>
                   <p className="font-medium text-gray-900">{movie.title}</p>
-                  <p className="text-sm text-gray-500">{movie.date}</p>
+                  <p className="text-sm text-gray-500">{movie.createdAt ? new Date(movie.createdAt).toLocaleDateString() : '—'}</p>
                 </div>
-                <p className="text-sm font-semibold text-blue-600">{movie.views} views</p>
+                <p className="text-sm font-semibold text-blue-600">{movie.rating || 0} rating</p>
               </div>
             ))}
+            {!loading && movies.length === 0 && <p className="text-sm text-gray-500">No movies found.</p>}
           </div>
         </div>
 
-        {/* Recent Reviews */}
+        {/* Recent Payments */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Reviews</h2>
-          <div className="space-y-3">
-            {[
-              { user: 'John Doe', movie: 'Avatar', rating: 4.5, date: '1 hour ago' },
-              { user: 'Jane Smith', movie: 'Titanic', rating: 5, date: '3 hours ago' },
-              { user: 'Mike Johnson', movie: 'Avengers', rating: 4, date: '5 hours ago' },
-            ].map((review, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border-b border-gray-200 hover:bg-gray-50">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Payments</h2>
+          <div className="space-y-3 h-64 overflow-y-scroll">
+            {payments.map((payment) => (
+              <div key={payment._id} className="flex items-center justify-between p-3 border-b border-gray-200 hover:bg-gray-50">
                 <div>
-                  <p className="font-medium text-gray-900">{review.user}</p>
-                  <p className="text-sm text-gray-500">{review.movie}</p>
+                  <p className="font-medium text-gray-900">{payment.user?.name || 'Unknown user'}</p>
+                  <p className="text-sm text-gray-500">{payment.plan || 'Payment'}</p>
                 </div>
                 <div className="text-right">
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <span
-                        key={i}
-                        className={`text-lg ${
-                          i < Math.floor(review.rating) ? 'text-yellow-400' : 'text-gray-300'
-                        }`}
-                      >
-                        ★
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">{review.date}</p>
+                  <p className="font-semibold text-green-600">{payment.currency || 'Rs.'} {Number(payment.amount || 0).toLocaleString()}</p>
+                  <p className="text-xs text-gray-400 mt-1">{payment.status || 'pending'} · {payment.createdAt ? new Date(payment.createdAt).toLocaleDateString() : '—'}</p>
                 </div>
               </div>
             ))}
+            {!loading && payments.length === 0 && <p className="text-sm text-gray-500">No payments found.</p>}
           </div>
         </div>
       </div>

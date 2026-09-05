@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiClient, refreshUserState } from "../../utils/api";
 import {
@@ -10,6 +10,7 @@ import {
 function Moviedetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const loadedMovieId = useRef(null);
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +28,8 @@ function Moviedetails() {
   }, [id]);
 
   useEffect(() => {
-    if (id) {
+    if (id && loadedMovieId.current !== id) {
+      loadedMovieId.current = id;
       loadMovie();
     }
   }, [id, loadMovie]);

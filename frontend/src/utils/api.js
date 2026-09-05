@@ -120,8 +120,8 @@ export const updateCurrentUserAPI = async (userData) => {
 };
 
 // ============ USER MANAGEMENT APIS (Admin) ============
-export const fetchUsersAPI = async () => {
-  const response = await apiClient.get('/users');
+export const fetchUsersAPI = async (params = {}) => {
+  const response = await apiClient.get('/users', { params });
   return response.data;
 };
 
@@ -141,8 +141,8 @@ export const deleteUserAPI = async (userId) => {
 };
 
 // ============ MOVIE MANAGEMENT APIS (Admin) ============
-export const fetchMoviesAPI = async () => {
-  const response = await apiClient.get('/movies');
+export const fetchMoviesAPI = async (params = {}) => {
+  const response = await apiClient.get('/movies', { params });
   return response.data;
 };
 
@@ -173,8 +173,8 @@ export const deleteReviewAPI = async (reviewId) => {
 };
 
 // ============ PAYMENT MANAGEMENT APIS (Admin - View Only) ============
-export const fetchPaymentsAPI = async () => {
-  const response = await apiClient.get('/payments');
+export const fetchPaymentsAPI = async (params = {}) => {
+  const response = await apiClient.get('/payments', { params });
   return response.data;
 };
 

@@ -43,8 +43,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
 
         {/* Right: Logo, Icons */}
         <div className="flex items-center gap-6">
-          {/* Notification Icon */}
-          <div className="relative">
+          {/* <div className="relative">
             <button
               onClick={() => {
                 setShowNotifications(!showNotifications);
@@ -58,7 +57,6 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
               </span>
             </button>
 
-            {/* Notification Dropdown */}
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl z-50">
                 <div className="p-4 border-b border-gray-200">
@@ -84,7 +82,6 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
             )}
           </div>
 
-          {/* Email Icon */}
           <div className="relative">
             <button
               onClick={() => {
@@ -99,7 +96,6 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
               </span>
             </button>
 
-            {/* Email Dropdown */}
             {showEmails && (
               <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl z-50">
                 <div className="p-4 border-b border-gray-200">
@@ -134,7 +130,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
                 </div>
               </div>
             )}
-          </div>
+          </div> */}
 
           {/* Logout Icon */}
           <button
